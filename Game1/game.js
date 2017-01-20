@@ -193,15 +193,15 @@ game.newLoopFromConstructor('myGame', function () {
 		camera.follow(rect);
 
 		brush.drawTextS({
-			text : 'FPS: ' + pjs.system.getFPS(),
-			size : 100,
+			text : 'Фпс: ' + pjs.system.getFPS(),
+			size : 50,
 			color : 'Red'
 		});
 
 		brush.drawTextS({
-			y : 100,
-			text : 'SCORE: ' + score,
-			size : 100,
+			y : 50,
+			text : 'Очки: ' + score,
+			size : 50,
 			color : 'RED'
 		});
 
