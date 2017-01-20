@@ -169,9 +169,9 @@ game.newLoopFromConstructor('myGame', function () {
 		game.clear(); // clear screen
 
 		if (key.isDown('LEFT'))
-			rect.speed.x = -5;
+			rect.speed.x = -2;
 		else if (key.isDown('RIGHT'))
-			rect.speed.x = 5;
+			rect.speed.x = 2;
 
 		// вращаем относительно скорости движения
 		rect.turn(rect.speed.x*3);
