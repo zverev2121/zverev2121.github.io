@@ -1,212 +1,361 @@
-var pjs = new PointJS('2D', 1280 / 2, 720 / 2, { // 16:9
-	backgroundColor : '#59AAC8' // if need
+// Создание движка
+var pjs = new PointJS("2d", 650, 500, {
+  backgroundColor : 'white'
 });
-pjs.system.initFullPage(); // for Full Page mode
-// pjs.system.initFullScreen(); // for Full Screen mode (only Desctop)
-
+pjs.system.setTitle("Зверев");
 pjs.system.initFPSCheck();
+// Ссылки на объекты. Библеотека
+var game = pjs.game;
+var brush = pjs.brush;
+var OOP = pjs.OOP;
+var point  = pjs.vector.point;
+var camera = pjs.camera; 
+var math = pjs.math;
+var v2d = pjs.vector.v2d;
 
-var platformer = new PlatformerJS(pjs);
+var key = pjs.keyControl.initKeyControl();
+var mouse = pjs.mouseControl.initMouseControl();
+var log = pjs.system.log;
 
-var log    = pjs.system.log;     // log = console.log;
-var game   = pjs.game;           // Game Manager
-var point  = pjs.vector.point;   // Constructor for Point
-var camera = pjs.camera;         // Camera Manager
-var brush  = pjs.brush;          // Brush, used for simple drawing
-var OOP    = pjs.OOP;            // Object's manager
-var math   = pjs.math;           // More Math-methods
-var levels = pjs.levels;         // Levels manager
-
-var key   = pjs.keyControl.initKeyControl();
-// var mouse = pjs.mouseControl.initMouseControl();
-// var touch = pjs.touchControl.initTouchControl();
-// var act   = pjs.actionControl.initActionControl();
-
-var width  = game.getWH().w; // width of scene viewport
-var height = game.getWH().h; // height of scene viewport
-
-pjs.system.setTitle('PointJS Game'); // Set Title for Tab or Window
-
-// Game Loop
-game.newLoopFromConstructor('myGame', function () {
-	// Constructor Game Loop
-	var score = 0;
-
-	// Для этого игрового цикла установим фон
-	platformer.setBackImage('img/back.png');
-
-	// переменная с размером ячейки (квадратные будут)
-	var tileSize = 35;
-
-	//
-	platformer.onOptionCollision = function (player, option) {
-		if (option.desc == 'level ok') {
-			document.location.reload();
-		}
-	};
-
-	platformer.onCellCollision = function (player, cell) {
-		score += 1;
-		platformer.del(cell);
-	};
-
-	platformer.onEnemyCollision = function (player, enemy) {
-		if (player.y+player.h < enemy.y+enemy.h/2 && player.speed.y > 0) {
-			platformer.del(enemy);
-			player.jumped = false;
-			player.jump(5);
-		} else {
-			score = -100;
-			document.location.reload();
-		}
-	};
-
-
-	// Это самопальный "построитель" карты уровня, притивный и простой
-	var map = [
-		'',
-		'0000000000000000000000000000000',
-		'0                            00',
-		'0   *****8	          8       00',		       
-		'0**0000000       0 80000     00',
-		'0******000000     0000000 000000',
-		'0000000000000  0 0000000     00',
-		'0000000000000000000000000000 00',
-		' 0000000      *******        00',
-		'  00000         *** 8*       00',
-		'   000  11111   11111        00',
-		'   000        11             000000000000000',
-		'   000                                     00',
-		'   000      111111 ***         00   ***8   000',
-		'   000             111 ****  110000000000000000',
-		'   000                  0000   00          000',
-		'   000   ***           000000    8         00',
-		'   000   00000000000000000000000000000000000',
-		'  00000  000000000     000000',
-		' 0000000   8       000 000000',
-		'0000000000000000000000 000000',
-		'0!                 *0  *00000',
-		'00000000000000000  *0  *00000',
-		'0                 000  *00000',
-		'0 00000000000000000000 000000',
-		'0                      000000',
-		'00000000000000  00 0000000000',
-		'000000000000000 ***0000000000',
-		'0000000000000000***0000000000',
-		'00000000000000000000000000000',
-	];
-
-	// Тут проходим по массиву со строками
-	// и на его основе создаем соответствующие блоки
-	// Чтобы понять, как это работает, посмотрите видеоуроки:
-	// https://www.youtube.com/watch?v=xd04kZZqyQU - создание карты уровня часть 1
-	// https://www.youtube.com/watch?v=YPEYy7SqK_c - создание карты уровня часть 2
-	OOP.forArr(map, function (string, y) {
-		OOP.forArr(string, function (cell, x) {
-			if (cell == '0')
-				platformer.addWall(game.newImageObject({
-					positionC : point(tileSize * x, tileSize * y),
-					w : tileSize, h : tileSize,
-					file : 'img/ground.png'
-				}));
-			else if (cell == '1')
-				platformer.addWall(game.newImageObject({
-					positionC : point(tileSize * x, tileSize * y),
-					w : tileSize, h : tileSize,
-					file : 'img/brick.png'
-				}));
-			else if (cell == '*')
-				platformer.addCell(game.newAnimationObject({
-					positionC : point(tileSize * x, tileSize * y),
-					animation : pjs.tiles.newAnimation('img/cell.png', 21, 33, 4),
-					w : tileSize / 2, h : tileSize / 2,
-					delay : math.random(50, 200) / 10,
-					userData : {
-						jumpSpeed : math.random(2, 10)
-					}
-				}));
-			else if (cell == '8')
-				platformer.addEnemy(game.newAnimationObject({
-					positionC : point(tileSize * x, tileSize * y),
-					animation : pjs.tiles.newAnimation('img/enemy.png', 44, 32, 2),
-					w : 44 / 1.5, h : 32 / 1.5,
-					delay : math.random(50, 200) / 10,
-					userData : {
-						jumpSpeed : math.random(2, 10),
-						gravity : 2,
-						speed : point(-1, 0)
-					}
-				}));
-			else if (cell == '!')
-				platformer.addOption(game.newImageObject({
-					positionC : point(tileSize * x, tileSize * y),
-					file : pjs._logo,
-					w : tileSize, h : tileSize,
-					userData : {
-						desc : 'level ok'
-					}
-				}));
-
-		});
-	});
-
-	// Создание объекта
-	var rect = game.newImageObject({
-		positionC : point(150, 50), // central position of text
-		w : 30, h : 30,
-		file : 'img/action.png'
-	});
-	platformer.addAction(rect);
-	rect.friction = 0.1;
-	rect.gravity = 0.5;
-	platformer.setPlayer(rect);
-
-
-
-	// Основной цикл
-	this.update = function () {
-		// Update function
-		game.clear(); // clear screen
-
-		if (key.isDown('LEFT'))
-			rect.speed.x = -3;
-		else if (key.isDown('RIGHT'))
-			rect.speed.x = 3;
-
-		// вращаем относительно скорости движения
-		rect.turn(rect.speed.x*3);
-
-		if (key.isPress('UP'))
-			rect.jump(10); //rect.speed.y = -2;
-		else if (key.isDown('DOWN'))
-			rect.speed.y += 2;
-
-		if (rect.y > 1000) {
-			rect.y = 10;
-			rect.x = 150;
-		}
-
-		// обновление и отрисовка платформера
-		platformer.update();
-
-		// следим за нашим объектом
-		camera.follow(rect);
-
-		brush.drawTextS({
-			text : 'Фпс: ' + pjs.system.getFPS(),
-			size : 50,
-			color : 'Red'
-		});
-
-		brush.drawTextS({
-			y : 50,
-			text : 'Очки: ' + score,
-			size : 50,
-			color : 'RED'
-		});
-
-	};
-
+var newGame = game.newBaseObject({
+  x : 395, y : 150, 
+  w : 220, h : 40,
 });
 
-game.startLoop('myGame');
+var newGame1 = game.newBaseObject({
+  x : 420, y : 193, 
+  w : 160, h : 35,
+});
+
+var newGame2 = game.newBaseObject({
+  x : 430, y : 232, 
+  w : 130, h : 35,
+});
+
+var sl = game.newImageObject({
+	  x: 50, y: 25,
+	  w : 217, h : 400,
+	  file : 'img/солдат-меню.png'
+  });
+var tr = game.newImageObject({
+	  x: 0, y: 325,
+	  w : 750, h : 150,
+	  file : 'img/trava.png'
+  });
+  var les = game.newImageObject({
+	  x: 0, y: 0,
+	  w : 650, h : 500,
+	  file : 'img/les.png'
+  });
+   var st = game.newImageObject({
+	  x: 350, y: 70,
+	  w : 300, h : 350,
+	  file : 'img/Стенд.png'
+  });
+  var back = game.newBaseObject({
+  x : 0, y : 0, 
+  w : 120, h : 35,
+});
+   var br = game.newImageObject({
+	  x: -75, y: 435,
+	  w : 855, h : 75,
+	  angle : 0,
+	  file : 'img/Бревно.png'
+   });
+   var br1 = game.newImageObject({
+	  x: 10, y: 443,
+	  w : 150, h : 49,
+	  angle : 0,
+	  file : 'img/Бревно1.png'
+   });
+   var nik = game.newImageObject({
+	  x: 215, y: 70,
+	  w : 150, h : 100,
+	  angle : 0,
+	  file : 'img/Ник.png'
+   });
+
+   var nik1 = game.newImageObject({
+	  x: 215, y: 150,
+	  w : 150, h : 100,
+	  angle : 0,
+	  file : 'img/Ник.png'
+   });
+   
+game.newLoop('menu', function(){
+	game.clear();
+	game.fill('#cdbdff');
+	//Лес
+	les.draw();
+//nik.draw();
+nik1.draw();
+	//Стенд
+	st.draw();
+  // Солдат в меню
+  sl.draw();
+    	//трава
+	tr.draw();
+  	//бревно
+	br.draw();
+	br1.draw();
+
+
+
+	  brush.drawText({
+    text : "Территория",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 400, y : 150
+
+	});
+	
+	brush.drawText({
+    text : "Магазин",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 430, y : 190
+
+	});
+	
+	brush.drawText({
+    text : "Склад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 440, y : 230
+
+	});
+	
+	//newGame.drawStaticBox('red');
+  if (mouse.isInObject(newGame)){
+	  brush.drawText({
+    text : "Территория",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 400, y : 150,
+	 strokeColor : 'black',
+	strokeWidth : 2,
+	});
+  }
+  if (mouse.isPeekStatic('LEFT',newGame.getStaticBox())){
+	 game.setLoop('game');
+	 
+  };
+  
+  if (mouse.isInObject(newGame1)){
+	  brush.drawText({
+    text : "Магазин",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 430, y : 190,
+	 strokeColor : 'black',
+	strokeWidth : 2,
+	});
+  }
+  if (mouse.isPeekStatic('LEFT',newGame1.getStaticBox())){
+	 game.setLoop('magazin');
+	 
+  };
+  
+  if (mouse.isInObject(newGame2)){
+	  brush.drawText({
+    text : "Склад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 440, y : 230,
+	 strokeColor : 'black',
+	strokeWidth : 2,
+	});
+  };
+  if (mouse.isPeekStatic('LEFT',newGame2.getStaticBox())){
+	 game.setLoop('sklad');
+	 
+  };
+  brush.drawTextS({
+			text : 'Фпс: ' + pjs.system.getFPS(),
+			size : 20,
+			x : 570, y : 0,
+			color : 'Black',
+			style : 'bold italic',
+		});
+});
+	
+
+var pl = game.newImageObject({
+	  x: 325, y: 400,
+	  w : 50, h : 37,
+	  file : 'img/soldat.png'
+  });
+  
+  
+  var buls = [];
+
+// Функция "Территория"
+game.newLoop("game", function () {
+	game.fill('#cdbdff');
+	
+	//Слежение за объектом
+	var plPos = pl.getPositionC();
+	//camera.follow(pl);
+	
+	OOP.forArr(buls, function(el){
+		if (el.life){
+		el.draw();
+		el.moveAngle(5);// Скорость пули
+		
+	}	
+});
+	  // Отрисовка простого текста
+  brush.drawText({
+    text : "Стрелять левой кнопкой!",
+    color : "Yellow",
+    size : 25,
+    x : 200, y : 350
+
+  });
+	
+	//Рисовка объекта
+	  pl.draw();
+	  
+	  //Оружее
+		  brush.drawLineAngle({
+	  x : plPos.x, y : plPos.y, 
+	  length : 0, 
+	  angle : pl.getAngle(), 
+	  strokeColor : "green" ,
+	  strokeWidth : 0
+	});
+	
+	//вращение за мышью
+	pl.rotate(mouse.getPosition());
+	
+
+	  
+	  
+	  
+	  
+	  //Управление
+	  if (key.isDown('D'))
+		  pl.move(point(1,0));
+	  if (key.isDown('A'))
+		  pl.move(point(-1,0));
+	  if (key.isDown('W'))
+		  pl.move(point(0,-1));
+	  if (key.isDown('S'))
+		  pl.move(point(0,1));
+
+	  
+	  if (mouse.isPress('LEFT')){
+		var bul = game.newImageObject({
+			x : plPos.x, y : plPos.y,
+		  
+	  w :10, h : 3,
+	  file : 'img/bul.png',
+		  userData : {
+			  life : 1
+	  },
+	  angle : pl.getAngle()
+	    
+  });
+  buls.push(bul);
+	  };
+
+    brush.drawTextS({
+			text : 'Фпс: ' + pjs.system.getFPS(),
+			size : 20,
+			x : 570, y : 0,
+			color : 'Black',
+			style : 'bold italic',
+		});
+
+  
+});
+
+game.newLoop("magazin", function () {
+		game.clear();		
+	game.fill('#cdbdff');
+	
+	
+	
+	brush.drawText({
+    text : "Назад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 2, y : 0
+
+	});
+	//back.drawStaticBox('red');
+	if (mouse.isInObject(back)){
+	  brush.drawText({
+    text : "Назад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 2, y : 0,
+	 strokeColor : 'black',
+	strokeWidth : 2,
+	});
+  }
+  if (mouse.isPeekStatic('LEFT',back.getStaticBox())){
+	 game.setLoop('menu');
+	 
+  };
+	  brush.drawTextS({
+			text : 'Фпс: ' + pjs.system.getFPS(),
+			size : 20,
+			x : 570, y : 0,
+			color : 'Black',
+			style : 'bold italic',
+		});
+});
+
+game.newLoop("sklad", function () {
+		game.clear();		
+	game.fill('#cdbdff');
+	
+	
+	brush.drawText({
+    text : "Назад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 2, y : 0
+
+	});
+	//back.drawStaticBox('red');
+	if (mouse.isInObject(back)){
+	  brush.drawText({
+    text : "Назад",
+    color : "#FF3D3D",
+    size : 35,
+	style : 'bold',
+    x : 2, y : 0,
+	 strokeColor : 'black',
+	strokeWidth : 2,
+	});
+  }
+  if (mouse.isPeekStatic('LEFT',back.getStaticBox())){
+	 game.setLoop('menu');
+	 
+  };
+	  brush.drawTextS({
+			text : 'Фпс: ' + pjs.system.getFPS(),
+			size : 20,
+			x : 570, y : 0,
+			color : 'Black',
+			style : 'bold italic',
+		});
+});
+	
+
+// Назначение игрового цикла как основного
+game.setLoop('menu');
+
+// Старт игрового цикла
+game.start();
