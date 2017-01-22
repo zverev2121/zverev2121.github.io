@@ -35,7 +35,7 @@ var newGame2 = game.newBaseObject({
 var sl = game.newImageObject({
 	  x: 50, y: 25,
 	  w : 217, h : 400,
-	  file : 'img/Cолдат-меню.png'
+	  file : 'img/sl1.png'
   });
 var tr = game.newImageObject({
 	  x: 0, y: 325,
